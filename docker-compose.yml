@@ -1,0 +1,52 @@
+services:
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+            target: dev
+        container_name: giphy-api
+        restart: unless-stopped
+        working_dir: /var/www/
+        command: >
+            bash -c "dockerize -wait tcp://db:3306 -timeout 60s php artisan migrate:fresh --seed && php-fpm"
+        volumes:
+            - ./:/var/www
+        networks:
+            - giphy-network
+        depends_on:
+            - db
+
+    nginx:
+        image: nginx:alpine
+        container_name: giphy-nginx
+        restart: unless-stopped
+        ports:
+            - "8000:80"
+        volumes:
+            - ./:/var/www
+            - ./.docker/nginx/conf.d:/etc/nginx/conf.d/
+        networks:
+            - giphy-network
+        depends_on:
+            - app
+
+    db:
+        image: mysql:8.0
+        container_name: giphy-db
+        restart: unless-stopped
+        environment:
+            MYSQL_ROOT_PASSWORD: rootpass
+            MYSQL_DATABASE: giphy_db
+            MYSQL_USER: dbuser
+            MYSQL_PASSWORD: dbpass
+        volumes:
+            - type: tmpfs
+              target: /var/lib/mysql
+        networks:
+            - giphy-network
+        ports:
+            - "3306:3306"
+
+networks:
+    giphy-network:
+        driver: bridge
