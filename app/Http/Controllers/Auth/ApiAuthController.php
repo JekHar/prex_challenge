@@ -20,7 +20,6 @@ class ApiAuthController extends Controller
             'password' => $request->password,
             'scope' => ''
         ]);
-
         if ($response->failed()) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }

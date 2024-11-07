@@ -1,3 +1,4 @@
+# docker-compose.yml
 services:
     app:
         build:
@@ -8,9 +9,16 @@ services:
         restart: unless-stopped
         working_dir: /var/www/
         command: >
-            bash -c "dockerize -wait tcp://db:3306 -timeout 60s php artisan migrate:fresh --seed && php-fpm"
+            bash -c "chown -R dev:dev /var/www &&
+            composer install &&
+            dockerize -wait tcp://db:3306 -timeout 60s &&
+            php artisan migrate:fresh --seed &&
+            php artisan passport:install --force --no-interaction &&
+            php-fpm"
         volumes:
             - ./:/var/www
+            - /var/www/vendor
+        user: "1000:1000"  # Run as dev user
         networks:
             - giphy-network
         depends_on:
